@@ -36,6 +36,9 @@ export default function Dashboard() {
       .insert({ name: name.trim(), created_by: userData.user.id })
       .select().single();
     if (error) { setErr(error.message); return; }
+    const { error: memErr } = await supabase.from('project_members')
+      .insert({ project_id: data.id, user_id: userData.user.id, role: 'owner' });
+    if (memErr) { setErr(memErr.message); return; }
     router.push(`/projects/${data.id}`);
   }
 
