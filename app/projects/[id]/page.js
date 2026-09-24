@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
 import { DEFAULT_SECTIONS, TEMPLATES } from '../../../lib/templates';
@@ -9,6 +9,21 @@ function fmtDim(vals) {
 }
 function money(n) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function mToFtIn(m) {
+  const ti = m / 0.0254, ft = Math.floor(ti / 12), inch = ti - ft * 12;
+  return ft + "' " + inch.toFixed(1) + '"';
+}
+function parseLenInput(str, unit) {
+  if (str === null) return null;
+  str = str.trim();
+  if (!str) return null;
+  if (unit === 'm') { const v = parseFloat(str); return v > 0 ? v : null; }
+  const m = str.match(/^(-?\d+(\.\d+)?)\s*'?\s*(\d+(\.\d+)?)?"?$/);
+  if (!m) return null;
+  const ft = parseFloat(m[1]) || 0, inch = parseFloat(m[3]) || 0;
+  const meters = (ft * 12 + inch) * 0.0254;
+  return meters > 0 ? meters : null;
 }
 
 export default function ProjectPage() {
@@ -33,6 +48,18 @@ export default function ProjectPage() {
   const [dw, setDw] = useState('');
   const [tsec, setTsec] = useState('');
 
+  const [drawing, setDrawing] = useState(null);
+  const [dMode, setDMode] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [unit, setUnit] = useState('m');
+  const [dStatusMsg, setDStatusMsg] = useState('');
+  const [countActive, setCountActive] = useState(false);
+  const imgCanvasRef = useRef(null);
+  const ovCanvasRef = useRef(null);
+  const dPtsRef = useRef([]);
+  const countRef = useRef({ n: 0, ds: '', sec: '' });
+  const fileRef = useRef(null);
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -43,6 +70,7 @@ export default function ProjectPage() {
       const { data: userData } = await supabase.auth.getUser();
       const { data: rowData } = await supabase.from('dimension_rows').select('*').eq('project_id', id).order('created_at');
       const { data: rateData } = await supabase.from('rates').select('*').eq('owner', userData.user.id);
+      const { data: drawData } = await supabase.from('drawings').select('*').eq('project_id', id).maybeSingle();
       if (!active) return;
       setProject(proj);
       setSections(proj.sections && proj.sections.length ? proj.sections : DEFAULT_SECTIONS);
@@ -52,11 +80,37 @@ export default function ProjectPage() {
       const rMap = {};
       (rateData || []).forEach(r => { rMap[r.description + '|' + r.unit] = r.rate; });
       setRates(rMap);
+      if (drawData) setDrawing({ image: drawData.image, scale: drawData.scale });
       setLoading(false);
     })();
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (!drawing || !drawing.image) return;
+    const img = new Image();
+    img.onload = () => {
+      const cv = imgCanvasRef.current, ov = ovCanvasRef.current;
+      if (!cv || !ov) return;
+      cv.width = ov.width = img.naturalWidth;
+      cv.height = ov.height = img.naturalHeight;
+      cv.style.width = ov.style.width = (img.naturalWidth * zoom) + 'px';
+      cv.style.height = ov.style.height = (img.naturalHeight * zoom) + 'px';
+      cv.getContext('2d').drawImage(img, 0, 0);
+      ov.getContext('2d').clearRect(0, 0, ov.width, ov.height);
+      dPtsRef.current = [];
+    };
+    img.src = drawing.image;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawing && drawing.image]);
+
+  useEffect(() => {
+    const cv = imgCanvasRef.current, ov = ovCanvasRef.current;
+    if (!cv || !cv.width) return;
+    cv.style.width = ov.style.width = (cv.width * zoom) + 'px';
+    cv.style.height = ov.style.height = (cv.height * zoom) + 'px';
+  }, [zoom]);
 
   function nums() {
     const t = parseFloat(tm) || 1;
@@ -108,9 +162,9 @@ export default function ProjectPage() {
 
   async function setRate(key, value) {
     setRates(r => ({ ...r, [key]: value }));
-    const [description, unit] = key.split('|');
+    const [description, unit_] = key.split('|');
     const { data: userData } = await supabase.auth.getUser();
-    await supabase.from('rates').upsert({ owner: userData.user.id, description, unit, rate: value });
+    await supabase.from('rates').upsert({ owner: userData.user.id, description, unit: unit_, rate: value });
   }
 
   function groups() {
@@ -161,6 +215,158 @@ export default function ProjectPage() {
     setTimeout(() => document.body.classList.remove('print-boq'), 300);
   }
 
+  function fmtLen(m) { return unit === 'm' ? m.toFixed(3) + ' m' : mToFtIn(m); }
+
+  async function handleFile(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const tmp = new Image();
+      tmp.onload = async () => {
+        const mw = 1400, sc = Math.min(1, mw / tmp.naturalWidth);
+        const cw = Math.round(tmp.naturalWidth * sc), ch = Math.round(tmp.naturalHeight * sc);
+        const oc = document.createElement('canvas');
+        oc.width = cw; oc.height = ch;
+        oc.getContext('2d').drawImage(tmp, 0, 0, cw, ch);
+        const out = oc.toDataURL('image/jpeg', 0.78);
+        await supabase.from('drawings').upsert({ project_id: id, image: out, scale: null });
+        setDrawing({ image: out, scale: null });
+        setDStatusMsg('Drawing imported. Tap "Set scale", then click two points a known distance apart.');
+      };
+      tmp.src = reader.result;
+    };
+    reader.readAsDataURL(f);
+    e.target.value = '';
+  }
+
+  async function removeDrawing() {
+    if (!confirm('Remove the imported drawing from this project?')) return;
+    await supabase.from('drawings').delete().eq('project_id', id);
+    setDrawing(null);
+    setDMode(null);
+    setDStatusMsg('');
+  }
+
+  function dPoint(e) {
+    const ov = ovCanvasRef.current;
+    const r = ov.getBoundingClientRect();
+    const sx = ov.width / r.width, sy = ov.height / r.height;
+    return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
+  }
+  function redrawPts() {
+    const ov = ovCanvasRef.current, octx = ov.getContext('2d');
+    octx.clearRect(0, 0, ov.width, ov.height);
+    dPtsRef.current.forEach(p => {
+      octx.fillStyle = dMode === 'cal' ? '#c2777a' : '#3c6e58';
+      octx.beginPath(); octx.arc(p.x, p.y, 5, 0, 7); octx.fill();
+    });
+  }
+  function dLabel(text, x, y) {
+    const octx = ovCanvasRef.current.getContext('2d');
+    octx.fillStyle = '#16232f';
+    octx.font = "600 12px 'IBM Plex Mono', monospace";
+    octx.fillText(text, x + 8, y - 8);
+  }
+
+  function endCount() {
+    if (countActive && countRef.current.n > 0) {
+      const c = countRef.current;
+      supabase.from('dimension_rows').insert({
+        project_id: id, section: c.sec, timesing: c.n, dims: [], squaring: c.n,
+        description: c.ds, unit: 'nr', drawing_ref: null
+      }).select().single().then(({ data, error }) => {
+        if (!error) setRows(r => [...r, data]);
+      });
+    }
+    setCountActive(false);
+    countRef.current = { n: 0, ds: '', sec: '' };
+  }
+
+  function setMode(mode) {
+    endCount();
+    setDMode(cur => {
+      const next = cur === mode ? null : mode;
+      dPtsRef.current = [];
+      redrawPts();
+      setDStatusMsg(next ? statusFor(next) : '');
+      return next;
+    });
+  }
+
+  function statusFor(mode) {
+    if (mode === 'cal') return 'Click two points a known distance apart on the drawing.';
+    if (mode === 'len') return 'Click two points to measure a length.';
+    if (mode === 'rect') return 'Click two opposite corners to measure length and width.';
+    return '';
+  }
+
+  function startCount() {
+    if (countActive) { endCount(); return; }
+    if (!ds.trim()) { alert('Type a description in the "Add dimension" form above first (e.g. "Light fitting"), then start counting.'); return; }
+    setDMode(null); dPtsRef.current = []; redrawPts();
+    countRef.current = { n: 0, ds: ds.trim(), sec: nsec.trim() || sec };
+    setCountActive(true);
+    setDStatusMsg('Counting "' + countRef.current.ds + '" — click each one on the drawing, then "Finish count".');
+  }
+
+  function undoPoint() { dPtsRef.current.pop(); redrawPts(); }
+  function clearMarks() { dPtsRef.current = []; redrawPts(); if (countActive) { countRef.current.n = 0; } }
+
+  async function onCanvasClick(e) {
+    if (countActive) {
+      const p = dPoint(e);
+      countRef.current.n++;
+      const octx = ovCanvasRef.current.getContext('2d');
+      octx.fillStyle = '#b1494c'; octx.beginPath(); octx.arc(p.x, p.y, 9, 0, 7); octx.fill();
+      octx.fillStyle = '#fff'; octx.font = "600 12px 'IBM Plex Sans', sans-serif";
+      octx.textAlign = 'center'; octx.textBaseline = 'middle';
+      octx.fillText(countRef.current.n, p.x, p.y + 1);
+      octx.textAlign = 'start'; octx.textBaseline = 'alphabetic';
+      setDStatusMsg('Counting "' + countRef.current.ds + '" — ' + countRef.current.n + ' placed. Click more, or "Finish count".');
+      return;
+    }
+    if (!dMode) return;
+    const p = dPoint(e);
+    dPtsRef.current.push(p);
+    const octx = ovCanvasRef.current.getContext('2d');
+    octx.fillStyle = dMode === 'cal' ? '#c2777a' : '#3c6e58';
+    octx.beginPath(); octx.arc(p.x, p.y, 5, 0, 7); octx.fill();
+    if (dPtsRef.current.length === 2) {
+      const a = dPtsRef.current[0], b = dPtsRef.current[1];
+      const dx = b.x - a.x, dy = b.y - a.y, px = Math.sqrt(dx * dx + dy * dy);
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      octx.strokeStyle = dMode === 'cal' ? '#c2777a' : '#3c6e58'; octx.lineWidth = 2;
+      if (dMode === 'rect') octx.strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(dx), Math.abs(dy));
+      else { octx.beginPath(); octx.moveTo(a.x, a.y); octx.lineTo(b.x, b.y); octx.stroke(); }
+
+      if (dMode === 'cal') {
+        const msg = unit === 'm' ? 'How many metres is that line, on the actual building?' : "How long is that line, in feet' inches\" (e.g. 12'6)?";
+        const real = parseLenInput(prompt(msg), unit);
+        if (real) {
+          await supabase.from('drawings').upsert({ project_id: id, image: drawing.image, scale: px / real });
+          setDrawing(dr => ({ ...dr, scale: px / real }));
+          dLabel(fmtLen(real), mx, my);
+          setDStatusMsg('Scale set — ' + Math.round(px / real) + ' px per metre.');
+        } else { alert('Enter a valid length to set the scale.'); }
+        dPtsRef.current = [];
+      } else {
+        const sc = drawing && drawing.scale;
+        if (!sc) { alert('Set the scale first.'); dPtsRef.current = []; return; }
+        if (dMode === 'len') {
+          const mL = px / sc; setL(mL.toFixed(3)); dLabel(fmtLen(mL), mx, my);
+          setDStatusMsg('Length filled: ' + fmtLen(mL));
+        } else {
+          const mLx = Math.abs(dx) / sc, mLy = Math.abs(dy) / sc;
+          setL(mLx.toFixed(3)); setW(mLy.toFixed(3));
+          dLabel(fmtLen(mLx) + ' × ' + fmtLen(mLy), Math.min(a.x, b.x), Math.min(a.y, b.y));
+          setDStatusMsg('Length × width filled: ' + fmtLen(mLx) + ' × ' + fmtLen(mLy));
+        }
+        dPtsRef.current = [];
+      }
+    }
+  }
+
   if (loading) return <p style={{ padding: 24 }}>Loading…</p>;
   if (err) return <div className="wrap"><p className="err">{err}</p><a className="btn o" href="/dashboard">Back to projects</a></div>;
 
@@ -181,7 +387,7 @@ export default function ProjectPage() {
           <div className="card">
             <div className="entry">
               <h2>Add dimension</h2>
-              <p className="d">Fill in and add — or pick a standard item below to prefill it.</p>
+              <p className="d">Fill in and add — or pick a standard item below, or click-measure off the drawing.</p>
               <form onSubmit={addRow}>
                 <div className="frow">
                   <div><label>Timesing</label><input type="number" min="1" step="1" value={tm} onChange={e => setTm(e.target.value)} /></div>
@@ -210,6 +416,44 @@ export default function ProjectPage() {
                 </div>
               </form>
             </div>
+          </div>
+
+          <div className="card" style={{ marginTop: 16 }}>
+            <div className="entry" style={{ paddingBottom: 10 }}>
+              <h2>Drawing</h2>
+              <p className="d">Import a drawing image, set its scale, then click to measure straight off it.</p>
+              <div className="actions" style={{ marginTop: 0 }}>
+                <label className="btn o" style={{ cursor: 'pointer' }}>Upload image
+                  <input type="file" accept="image/*" ref={fileRef} onChange={handleFile} hidden />
+                </label>
+                <button className={'btn o' + (dMode === 'cal' ? ' on' : '')} onClick={() => setMode('cal')}>Set scale</button>
+                <button className={'btn o' + (dMode === 'len' ? ' on' : '')} onClick={() => setMode('len')}>Measure length</button>
+                <button className={'btn o' + (dMode === 'rect' ? ' on' : '')} onClick={() => setMode('rect')}>Measure rectangle</button>
+                <button className={'btn o' + (countActive ? ' on' : '')} onClick={startCount}>{countActive ? ('Finish count (' + countRef.current.n + ')') : 'Count items'}</button>
+                <button className="btn o" onClick={undoPoint}>Undo last point</button>
+                <button className="btn o" onClick={clearMarks}>Clear marks</button>
+                {drawing && <button className="btn o" onClick={removeDrawing}>Remove drawing</button>}
+              </div>
+              <p className="dstat">{drawing ? (dStatusMsg || (drawing.scale ? ('Scale set — ' + Math.round(drawing.scale) + ' px per metre.') : 'Drawing imported. Tap "Set scale" to begin.')) : 'No drawing imported yet.'}</p>
+            </div>
+            {drawing && (
+              <div className="dwrap">
+                <div className="dcv-outer">
+                  <div className="dcv-in">
+                    <canvas ref={imgCanvasRef} />
+                    <canvas ref={ovCanvasRef} onClick={onCanvasClick} />
+                  </div>
+                </div>
+                <div className="dzoom">
+                  <button className="btn o zbtn" onClick={() => setZoom(z => Math.max(.3, z * 0.6))}>−</button>
+                  <span>{Math.round(zoom * 100)}%</span>
+                  <button className="btn o zbtn" onClick={() => setZoom(z => Math.min(3, z * 1.4))}>+</button>
+                  <span style={{ marginLeft: 14, color: 'var(--mu)', fontSize: 12.5 }}>Units:</span>
+                  <button className={'btn o utog' + (unit === 'm' ? ' on' : '')} onClick={() => setUnit('m')}>metres</button>
+                  <button className={'btn o utog' + (unit === 'ft' ? ' on' : '')} onClick={() => setUnit('ft')}>feet-inches</button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="card" style={{ marginTop: 16 }}>
