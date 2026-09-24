@@ -53,7 +53,10 @@ export default function Dashboard() {
     <div className="wrap">
       <div className="topbar">
         <div><h1>Dimension Sheet</h1><p className="d" style={{ margin: '2px 0 0' }}>Digital takeoff, the standard way</p></div>
-        <button className="btn o" onClick={signOut}>Sign out</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <a className="btn o" href="/profile">Profile</a>
+          <button className="btn o" onClick={signOut}>Sign out</button>
+        </div>
       </div>
       <div className="hcols">
         <div className="hcard">
