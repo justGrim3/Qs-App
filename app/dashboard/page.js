@@ -1,179 +1,156 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 
-export default function Dashboard() {
-  const [projects, setProjects] = useState([]);
-  const [name, setName] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState('');
-  const [q, setQ] = useState('');
-  const [dimCount, setDimCount] = useState(0);
-  const [rates, setRates] = useState([]);
-  const [rn, setRn] = useState(''); const [ru, setRu] = useState('m³'); const [rr, setRr] = useState('');
+export default function LandingPage() {
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
   const revealRefs = useRef([]);
 
   useEffect(() => {
     let active = true;
     supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
-      if (!data.session) { router.replace('/login'); return; }
-      load();
+      if (data.session) { router.replace('/dashboard'); return; }
+      setChecking(false);
     });
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (loading) return;
+    if (checking) return;
     if (!('IntersectionObserver' in window)) return;
     const io = new IntersectionObserver(es => {
       es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
-    }, { threshold: 0.1 });
+    }, { threshold: 0.12 });
     revealRefs.current.forEach(el => el && io.observe(el));
     return () => io.disconnect();
-  }, [loading, projects]);
+  }, [checking]);
 
-  async function load() {
-    const { data: userData } = await supabase.auth.getUser();
-    const { data: pData, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-    if (!error) setProjects(pData || []);
-    const { count } = await supabase.from('dimension_rows').select('id', { count: 'exact', head: true });
-    setDimCount(count || 0);
-    const { data: rData } = await supabase.from('rates').select('*').eq('owner', userData.user.id).order('description');
-    setRates(rData || []);
-    setLoading(false);
-  }
+  if (checking) return <p style={{ padding: 24 }}>Loading…</p>;
 
-  async function createProject(e) {
-    e.preventDefault();
-    setErr('');
-    if (!name.trim()) return;
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !userData?.user) {
-      setErr('Not signed in according to the browser: ' + (userErr?.message || 'no user object'));
-      return;
-    }
-    const { data, error } = await supabase.from('projects')
-      .insert({ name: name.trim(), created_by: userData.user.id })
-      .select().single();
-    if (error) {
-      setErr(
-        'code: ' + error.code +
-        ' | message: ' + error.message +
-        (error.details ? ' | details: ' + error.details : '') +
-        (error.hint ? ' | hint: ' + error.hint : '') +
-        ' | signed in as uid: ' + userData.user.id
-      );
-      return;
-    }
-    const { error: memErr } = await supabase.from('project_members')
-      .insert({ project_id: data.id, user_id: userData.user.id, role: 'owner' });
-    if (memErr) { setErr('project_members error: ' + memErr.message); return; }
-    router.push(`/projects/${data.id}`);
-  }
-
-  async function addRate(e) {
-    e.preventDefault();
-    if (!rn.trim() || !rr) return;
-    const { data: userData } = await supabase.auth.getUser();
-    const rate = parseFloat(rr) || 0;
-    await supabase.from('rates').upsert({ owner: userData.user.id, description: rn.trim(), unit: ru, rate });
-    setRates(r => {
-      const i = r.findIndex(x => x.description === rn.trim() && x.unit === ru);
-      const row = { owner: userData.user.id, description: rn.trim(), unit: ru, rate };
-      if (i > -1) { const c = [...r]; c[i] = row; return c; }
-      return [...r, row].sort((a, b) => a.description.localeCompare(b.description));
-    });
-    setRn(''); setRr('');
-  }
-
-  async function updateRate(row, value) {
-    const rate = parseFloat(value) || 0;
-    setRates(rs => rs.map(r => (r.description === row.description && r.unit === row.unit ? { ...r, rate } : r)));
-    await supabase.from('rates').upsert({ owner: row.owner, description: row.description, unit: row.unit, rate });
-  }
-
-  async function signOut() {
-    await supabase.auth.signOut();
-    router.replace('/login');
-  }
-
-  if (loading) return <p style={{ padding: 24 }}>Loading…</p>;
-
-  const filtered = projects.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+  const FEATURES = [
+    { t: 'Digital dimension sheet', d: 'Timesing, dimensions and squaring, kept visible the way a checker expects — not just a final number.', i: 'sheet' },
+    { t: 'Standard items, in order', d: 'Each work section lists its usual sequence of items, so nothing gets missed on site.', i: 'list' },
+    { t: 'Click-measure a drawing', d: 'Import a drawing image, set its scale, and fill length, width or a count straight from your clicks.', i: 'ruler' },
+    { t: 'Abstract, automatically', d: 'Matching descriptions collect and total themselves, grouped by section, as you go.', i: 'stack' },
+    { t: 'Your rate list', d: 'Price a description once — it\u2019s remembered across every project you open.', i: 'tag' },
+    { t: 'Priced BOQ export', d: 'Send a client-ready bill as PDF, or the raw quantities as CSV, in one tap.', i: 'doc' },
+  ];
+  const ICONS = {
+    sheet: <><rect x="6" y="4" width="26" height="34" rx="2" /><path d="M11 12h16M11 18h16M11 24h10" /></>,
+    list: <><circle cx="9" cy="10" r="2" /><circle cx="9" cy="19" r="2" /><circle cx="9" cy="28" r="2" /><path d="M15 10h18M15 19h18M15 28h12" /></>,
+    ruler: <><rect x="5" y="17" width="30" height="10" rx="1.5" transform="rotate(-18 20 22)" /><path d="M13 15l2 4M18 13l2 4M23 11l2 4" /></>,
+    stack: <><path d="M20 5 6 12l14 7 14-7z" /><path d="M6 20l14 7 14-7M6 28l14 7 14-7" /></>,
+    tag: <><path d="M6 6h13l15 15-13 13L6 19z" /><circle cx="14" cy="14" r="2.4" /></>,
+    doc: <><path d="M9 4h15l7 7v25H9z" /><path d="M24 4v7h7" /><path d="M14 21h12M14 27h12M14 15h6" /></>,
+  };
 
   return (
-    <div>
-      <div className="ghero">
-        <div className="blob b1" /><div className="blob b2" /><div className="blob b3" />
-        <div className="inner wrap" style={{ padding: '0 0 0' }}>
-          <div className="topbar" style={{ marginBottom: 0 }}>
-            <div><h1>Dimension Sheet</h1><p className="d" style={{ margin: '2px 0 0' }}>Digital takeoff, the standard way</p></div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <a className="btn o" href="/profile">Profile</a>
-              <button className="btn o" onClick={signOut}>Sign out</button>
+    <div className="lp">
+      <header className="lp-nav">
+        <div className="lp-navin">
+          <span className="lp-brand">Dimension Sheet</span>
+          <nav className="lp-links">
+            <a href="#features">Features</a>
+            <a href="#how">How it works</a>
+          </nav>
+          <div className="lp-navcta">
+            <Link className="btn o" href="/login">Sign in</Link>
+            <Link className="btn g" href="/signup">Sign up free</Link>
+          </div>
+        </div>
+      </header>
+
+      <section className="lp-hero">
+        <div className="lp-grid" aria-hidden="true"></div>
+        <div className="lp-heroin">
+          <div className="lp-herotxt">
+            <span className="lp-eyebrow">Digital takeoff, the standard way</span>
+            <h1>Measure a job<br /><em>the way you were trained,</em><br />just faster.</h1>
+            <p>Dimension sheets, standard-item checklists, click-measure drawings and priced bills of quantities — one tool, kept true to how a real takeoff is done and checked.</p>
+            <div className="lp-cta">
+              <Link className="btn g" href="/signup">Start free</Link>
+              <a className="btn o" href="#features">See what's inside</a>
             </div>
           </div>
+          <svg className="lp-scene" viewBox="0 0 600 420" aria-hidden="true">
+            <g className="lp-drawn lp-d1"><path d="M40 380h520" /></g>
+            <g className="lp-drawn lp-d2"><path d="M120 380V140h140V380" /><path d="M120 170h140M120 210h140M120 250h140M120 290h140M120 330h140" /></g>
+            <g className="lp-drawn lp-d2">
+              {[0, 1, 2, 3, 4].map(r => [0, 1, 2].map(c => (
+                <rect key={r + '-' + c} x={135 + c * 42} y={182 + r * 40} width="24" height="20" />
+              )))}
+            </g>
+            <g className="lp-crane">
+              <g className="lp-drawn lp-d3"><path d="M430 380V90" /><path d="M405 110h50M405 130h50M405 150h50" /></g>
+              <g className="lp-jib">
+                <g className="lp-drawn lp-d4"><path d="M430 92h150M430 92 L400 78 L430 92" /></g>
+                <g className="lp-drawn lp-d4"><path d="M560 92v14M545 92v10" /></g>
+                <g className="lp-hook"><path className="lp-drawn lp-d5" d="M552 106v40" /><circle className="lp-drawn lp-d5" cx="552" cy="150" r="5" /></g>
+              </g>
+            </g>
+            <g className="lp-drawn lp-d6"><path d="M120 400h140M120 396v8M260 396v8" /></g>
+            <text className="lp-dimlabel" x="150" y="416">12.400 m</text>
+            <g className="lp-pts">
+              <circle className="lp-pt" cx="90" cy="380" r="4" /><circle className="lp-ring" cx="90" cy="380" r="4" />
+              <circle className="lp-pt" cx="330" cy="380" r="4" /><circle className="lp-ring" cx="330" cy="380" r="4" style={{ animationDelay: '-1s' }} />
+              <circle className="lp-pt" cx="480" cy="380" r="4" /><circle className="lp-ring" cx="480" cy="380" r="4" style={{ animationDelay: '-2s' }} />
+            </g>
+          </svg>
         </div>
-      </div>
+      </section>
 
-      <div className="wrap" style={{ paddingTop: 0 }}>
-        <div className="stats">
-          <div className="stat glass rv" ref={el => (revealRefs.current[0] = el)}><b>{projects.length}</b><span>Projects</span></div>
-          <div className="stat glass rv" ref={el => (revealRefs.current[1] = el)}><b>{dimCount}</b><span>Dimensions logged</span></div>
-          <div className="stat glass rv" ref={el => (revealRefs.current[2] = el)}><b>{rates.length}</b><span>Rates saved</span></div>
+      <div className="lp-tick" aria-hidden="true"><div>
+        {Array(2).fill('Timesing \u2726 Squaring \u2726 Abstracting \u2726 Billing \u2726 Priced BOQ \u2726 Click-to-measure \u2726 ').join('')}
+      </div></div>
+
+      <section className="lp-sec">
+        <div className="lp-steps3">
+          <div className="lp-s3 rv" ref={el => (revealRefs.current[0] = el)}><b>1</b><h3>Take off</h3><p>By hand, from a standard checklist, or by clicking a drawing.</p></div>
+          <div className="lp-s3 rv" ref={el => (revealRefs.current[1] = el)}><b>2</b><h3>Abstract</h3><p>Matching items total themselves automatically, section by section.</p></div>
+          <div className="lp-s3 rv" ref={el => (revealRefs.current[2] = el)}><b>3</b><h3>Bill</h3><p>Add your rates once, export a priced BOQ or a plain quantities CSV.</p></div>
         </div>
+      </section>
 
-        <div className="hcols">
-          <div className="hcard glass rv" ref={el => (revealRefs.current[3] = el)}>
-            <h2>Your projects</h2>
-            {projects.length > 3 && (
-              <input className="search" placeholder="Search projects…" value={q} onChange={e => setQ(e.target.value)} />
-            )}
-            <div className="plist">
-              {projects.length === 0 && <p className="d">No projects yet — create your first one.</p>}
-              {projects.length > 0 && filtered.length === 0 && <p className="d">No projects match "{q}".</p>}
-              {filtered.map(p => (
-                <div key={p.id} className="pitem" onClick={() => router.push(`/projects/${p.id}`)}>{p.name}</div>
-              ))}
+      <section id="features" className="lp-sec">
+        <h2 className="lp-h2">Everything a takeoff needs</h2>
+        <p className="lp-sub">No spreadsheet gymnastics, no separate pricing sheet, no forgetting what comes next.</p>
+        <div className="lp-fgrid">
+          {FEATURES.map((f, i) => (
+            <div className="lp-fcard rv" key={f.t} ref={el => (revealRefs.current[3 + i] = el)}>
+              <svg className="lp-ic" viewBox="0 0 40 40" aria-hidden="true">{ICONS[f.i]}</svg>
+              <h3>{f.t}</h3><p>{f.d}</p>
             </div>
-          </div>
-          <div className="hcard glass rv" ref={el => (revealRefs.current[4] = el)}>
-            <h2>Create a new project</h2>
-            <p className="d">Give it a name — a job number or site name works well.</p>
-            <form onSubmit={createProject} className="newp">
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. 14 Marina Road" />
-              <button className="btn g" type="submit">Create</button>
-            </form>
-            {err && <p className="err" style={{ wordBreak: 'break-word' }}>{err}</p>}
-          </div>
+          ))}
         </div>
+      </section>
 
-        <details className="hcard glass rv" style={{ marginTop: 16 }} ref={el => (revealRefs.current[5] = el)}>
-          <summary className="rsum"><span>Your rate list</span></summary>
-          <p className="d" style={{ marginTop: 8 }}>Prices you've set once, reused automatically in every project's abstract.</p>
-          <div className="ratelist">
-            {rates.length === 0 && <p className="d" style={{ margin: 0 }}>No rates saved yet — add one below, or set one from inside a project.</p>}
-            {rates.map(r => (
-              <div className="raterow" key={r.description + '|' + r.unit}>
-                <span>{r.description}</span><span>{r.unit}</span>
-                <input type="number" step="0.01" value={r.rate || ''} onChange={e => updateRate(r, e.target.value)} />
-              </div>
-            ))}
-          </div>
-          <form onSubmit={addRate} className="newrate">
-            <input value={rn} onChange={e => setRn(e.target.value)} placeholder="Description, e.g. Blinding" />
-            <select value={ru} onChange={e => setRu(e.target.value)}>
-              {['m³', 'm²', 'm', 'nr', 'kg', 'item'].map(u => <option key={u}>{u}</option>)}
-            </select>
-            <input type="number" step="0.01" value={rr} onChange={e => setRr(e.target.value)} placeholder="Rate" />
-            <button className="btn g" type="submit">Add</button>
-          </form>
-        </details>
-      </div>
+      <section id="how" className="lp-sec lp-glass2">
+        <h2 className="lp-h2">Built for the method, not around it</h2>
+        <p className="lp-sub" style={{ maxWidth: 640, margin: '0 auto 8px' }}>
+          Most takeoff software replaces judgement with automated measurement. This keeps the traditional
+          sequence — timesing, dimensions, squaring, abstracting — intact and simply removes the tedious parts:
+          retyping totals, re-deriving prices, and remembering what's left to measure.
+        </p>
+      </section>
+
+      <section className="lp-sec lp-endcta">
+        <h2 className="lp-h2" style={{ color: '#fff' }}>Start your first sheet</h2>
+        <p className="lp-sub" style={{ color: '#cfc7b6' }}>Free to use. Your own projects, your own rate list, synced to your account.</p>
+        <div className="lp-cta" style={{ justifyContent: 'center' }}>
+          <Link className="btn g" href="/signup">Create free account</Link>
+          <Link className="btn o" href="/login" style={{ borderColor: '#5a5245', color: '#fff' }}>I already have one</Link>
+        </div>
+      </section>
+
+      <footer className="lp-foot">
+        <span>Dimension Sheet</span>
+        <nav><a href="#features">Features</a><Link href="/login">Sign in</Link><Link href="/signup">Sign up</Link></nav>
+      </footer>
     </div>
   );
 }
