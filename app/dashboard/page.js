@@ -51,14 +51,27 @@ export default function Dashboard() {
     e.preventDefault();
     setErr('');
     if (!name.trim()) return;
-    const { data: userData } = await supabase.auth.getUser();
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userData?.user) {
+      setErr('Not signed in according to the browser: ' + (userErr?.message || 'no user object'));
+      return;
+    }
     const { data, error } = await supabase.from('projects')
       .insert({ name: name.trim(), created_by: userData.user.id })
       .select().single();
-    if (error) { setErr(error.message); return; }
+    if (error) {
+      setErr(
+        'code: ' + error.code +
+        ' | message: ' + error.message +
+        (error.details ? ' | details: ' + error.details : '') +
+        (error.hint ? ' | hint: ' + error.hint : '') +
+        ' | signed in as uid: ' + userData.user.id
+      );
+      return;
+    }
     const { error: memErr } = await supabase.from('project_members')
       .insert({ project_id: data.id, user_id: userData.user.id, role: 'owner' });
-    if (memErr) { setErr(memErr.message); return; }
+    if (memErr) { setErr('project_members error: ' + memErr.message); return; }
     router.push(`/projects/${data.id}`);
   }
 
@@ -135,7 +148,7 @@ export default function Dashboard() {
               <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. 14 Marina Road" />
               <button className="btn g" type="submit">Create</button>
             </form>
-            {err && <p className="err">{err}</p>}
+            {err && <p className="err" style={{ wordBreak: 'break-word' }}>{err}</p>}
           </div>
         </div>
 
