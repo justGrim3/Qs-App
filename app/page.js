@@ -78,12 +78,44 @@ export default function LandingPage() {
             </div>
           </div>
           <svg className="lp-scene" viewBox="0 0 600 420" aria-hidden="true">
-            <g className="lp-drawn lp-d1"><path d="M40 380h520" /></g>
-            <g className="lp-drawn lp-d2"><path d="M120 380V140h140V380" /><path d="M120 170h140M120 210h140M120 250h140M120 290h140M120 330h140" /></g>
-            <g className="lp-drawn lp-d2">
-              {[0, 1, 2, 3, 4].map(r => [0, 1, 2].map(c => (
-                <rect key={r + '-' + c} x={135 + c * 42} y={182 + r * 40} width="24" height="20" />
-              )))}
+            <g className="lp-drawn lp-d1"><path d="M20 380h560" /></g>
+            <g className="lp-bld" style={{ animationDelay: '0.30s' }}>
+              <polygon className="lp-fL" points="45.0,380.0 6.9,358.0 6.9,273.0 45.0,295.0" />
+              <polygon className="lp-fR" points="45.0,380.0 83.1,358.0 83.1,273.0 45.0,295.0" />
+              <polygon className="lp-fT" points="45.0,295.0 83.1,273.0 45.0,251.0 6.9,273.0" />
+              <polygon className="lp-fRoof" points="45.0,295.0 83.1,273.0 45.0,239.0" />
+              <polygon className="lp-fRoof" points="83.1,273.0 45.0,251.0 45.0,239.0" />
+              <polygon className="lp-fRoof" points="45.0,251.0 6.9,273.0 45.0,239.0" />
+              <polygon className="lp-fRoof" points="6.9,273.0 45.0,295.0 45.0,239.0" />
+            </g>
+            <g className="lp-bld" style={{ animationDelay: '0.52s' }}>
+              <polygon className="lp-fL" points="97.0,380.0 64.1,361.0 64.1,226.0 97.0,245.0" />
+              <polygon className="lp-fR" points="97.0,380.0 129.9,361.0 129.9,226.0 97.0,245.0" />
+              <polygon className="lp-fT" points="97.0,245.0 129.9,226.0 97.0,207.0 64.1,226.0" />
+              <polygon className="lp-parapet" points="97.0,242.3 125.3,226.0 97.0,209.7 68.7,226.0" />
+            </g>
+            <g className="lp-bld" style={{ animationDelay: '0.74s' }}>
+              <polygon className="lp-fL" points="149.0,380.0 112.6,359.0 112.6,301.0 149.0,322.0" />
+              <polygon className="lp-fR" points="149.0,380.0 185.4,359.0 185.4,301.0 149.0,322.0" />
+              <polygon className="lp-fT" points="149.0,322.0 185.4,301.0 149.0,280.0 112.6,301.0" />
+              <polygon className="lp-fL" points="158.2,322.0 138.2,310.4 138.2,278.6 158.2,290.1" />
+              <polygon className="lp-fR" points="158.2,322.0 178.2,310.4 178.2,278.6 158.2,290.1" />
+              <polygon className="lp-fT" points="158.2,290.1 178.2,278.6 158.2,267.0 138.2,278.6" />
+            </g>
+            <g className="lp-bld" style={{ animationDelay: '0.96s' }}>
+              <polygon className="lp-fL" points="201.0,380.0 171.6,363.0 171.6,198.0 201.0,215.0" />
+              <polygon className="lp-fR" points="201.0,380.0 230.4,363.0 230.4,198.0 201.0,215.0" />
+              <polygon className="lp-fT" points="201.0,215.0 230.4,198.0 201.0,181.0 171.6,198.0" />
+              <polygon className="lp-parapet" points="201.0,212.6 226.3,198.0 201.0,183.4 175.7,198.0" />
+            </g>
+            <g className="lp-bld" style={{ animationDelay: '1.18s' }}>
+              <polygon className="lp-fL" points="243.0,380.0 208.4,360.0 208.4,262.0 243.0,282.0" />
+              <polygon className="lp-fR" points="243.0,380.0 277.6,360.0 277.6,262.0 243.0,282.0" />
+              <polygon className="lp-fT" points="243.0,282.0 277.6,262.0 243.0,242.0 208.4,262.0" />
+              <line className="lp-fEdge" x1="226.4" y1="262.0" x2="226.4" y2="248.0" />
+              <line className="lp-fEdge" x1="259.6" y1="262.0" x2="259.6" y2="248.0" />
+              <ellipse className="lp-fL" cx="243.0" cy="248.0" rx="16.6" ry="7.1" />
+              <path className="lp-fRoof" d="M 226.4 248.0 A 16.6 17.7 0 0 1 259.6 248.0 Z" />
             </g>
             <g className="lp-crane">
               <g className="lp-drawn lp-d3"><path d="M430 380V90" /><path d="M405 110h50M405 130h50M405 150h50" /></g>
@@ -93,8 +125,8 @@ export default function LandingPage() {
                 <g className="lp-hook"><path className="lp-drawn lp-d5" d="M552 106v40" /><circle className="lp-drawn lp-d5" cx="552" cy="150" r="5" /></g>
               </g>
             </g>
-            <g className="lp-drawn lp-d6"><path d="M120 400h140M120 396v8M260 396v8" /></g>
-            <text className="lp-dimlabel" x="150" y="416">12.400 m</text>
+            <g className="lp-drawn lp-d6"><path d="M45 400h233M45 396v8M278 396v8" /></g>
+            <text className="lp-dimlabel" x="90" y="416">18.600 m</text>
             <g className="lp-pts">
               <circle className="lp-pt" cx="90" cy="380" r="4" /><circle className="lp-ring" cx="90" cy="380" r="4" />
               <circle className="lp-pt" cx="330" cy="380" r="4" /><circle className="lp-ring" cx="330" cy="380" r="4" style={{ animationDelay: '-1s' }} />
