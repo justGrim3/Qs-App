@@ -66,7 +66,6 @@ export default function LandingPage() {
       </header>
 
       <section className="lp-hero">
-        <div className="lp-grid" aria-hidden="true"></div>
         <div className="lp-heroin">
           <div className="lp-herotxt">
             <span className="lp-eyebrow">Digital takeoff, the standard way</span>
@@ -74,66 +73,16 @@ export default function LandingPage() {
             <p>Dimension sheets, standard-item checklists, click-measure drawings and priced bills of quantities — one tool, kept true to how a real takeoff is done and checked.</p>
             <div className="lp-cta">
               <Link className="btn g" href="/signup">Start free</Link>
-              <a className="btn o" href="#features">See what's inside</a>
+              <a className="btn o lp-ghost" href="#features">See what's inside</a>
             </div>
           </div>
-          <svg className="lp-scene" viewBox="0 0 600 420" aria-hidden="true">
-            <g className="lp-drawn lp-d1"><path d="M20 380h560" /></g>
-            <g className="lp-bld" style={{ animationDelay: '0.30s' }}>
-              <polygon className="lp-fL" points="45.0,380.0 6.9,358.0 6.9,273.0 45.0,295.0" />
-              <polygon className="lp-fR" points="45.0,380.0 83.1,358.0 83.1,273.0 45.0,295.0" />
-              <polygon className="lp-fT" points="45.0,295.0 83.1,273.0 45.0,251.0 6.9,273.0" />
-              <polygon className="lp-fRoof" points="45.0,295.0 83.1,273.0 45.0,239.0" />
-              <polygon className="lp-fRoof" points="83.1,273.0 45.0,251.0 45.0,239.0" />
-              <polygon className="lp-fRoof" points="45.0,251.0 6.9,273.0 45.0,239.0" />
-              <polygon className="lp-fRoof" points="6.9,273.0 45.0,295.0 45.0,239.0" />
-            </g>
-            <g className="lp-bld" style={{ animationDelay: '0.52s' }}>
-              <polygon className="lp-fL" points="97.0,380.0 64.1,361.0 64.1,226.0 97.0,245.0" />
-              <polygon className="lp-fR" points="97.0,380.0 129.9,361.0 129.9,226.0 97.0,245.0" />
-              <polygon className="lp-fT" points="97.0,245.0 129.9,226.0 97.0,207.0 64.1,226.0" />
-              <polygon className="lp-parapet" points="97.0,242.3 125.3,226.0 97.0,209.7 68.7,226.0" />
-            </g>
-            <g className="lp-bld" style={{ animationDelay: '0.74s' }}>
-              <polygon className="lp-fL" points="149.0,380.0 112.6,359.0 112.6,301.0 149.0,322.0" />
-              <polygon className="lp-fR" points="149.0,380.0 185.4,359.0 185.4,301.0 149.0,322.0" />
-              <polygon className="lp-fT" points="149.0,322.0 185.4,301.0 149.0,280.0 112.6,301.0" />
-              <polygon className="lp-fL" points="158.2,322.0 138.2,310.4 138.2,278.6 158.2,290.1" />
-              <polygon className="lp-fR" points="158.2,322.0 178.2,310.4 178.2,278.6 158.2,290.1" />
-              <polygon className="lp-fT" points="158.2,290.1 178.2,278.6 158.2,267.0 138.2,278.6" />
-            </g>
-            <g className="lp-bld" style={{ animationDelay: '0.96s' }}>
-              <polygon className="lp-fL" points="201.0,380.0 171.6,363.0 171.6,198.0 201.0,215.0" />
-              <polygon className="lp-fR" points="201.0,380.0 230.4,363.0 230.4,198.0 201.0,215.0" />
-              <polygon className="lp-fT" points="201.0,215.0 230.4,198.0 201.0,181.0 171.6,198.0" />
-              <polygon className="lp-parapet" points="201.0,212.6 226.3,198.0 201.0,183.4 175.7,198.0" />
-            </g>
-            <g className="lp-bld" style={{ animationDelay: '1.18s' }}>
-              <polygon className="lp-fL" points="243.0,380.0 208.4,360.0 208.4,262.0 243.0,282.0" />
-              <polygon className="lp-fR" points="243.0,380.0 277.6,360.0 277.6,262.0 243.0,282.0" />
-              <polygon className="lp-fT" points="243.0,282.0 277.6,262.0 243.0,242.0 208.4,262.0" />
-              <line className="lp-fEdge" x1="226.4" y1="262.0" x2="226.4" y2="248.0" />
-              <line className="lp-fEdge" x1="259.6" y1="262.0" x2="259.6" y2="248.0" />
-              <ellipse className="lp-fL" cx="243.0" cy="248.0" rx="16.6" ry="7.1" />
-              <path className="lp-fRoof" d="M 226.4 248.0 A 16.6 17.7 0 0 1 259.6 248.0 Z" />
-            </g>
-            <g className="lp-crane">
-              <g className="lp-drawn lp-d3"><path d="M430 380V90" /><path d="M405 110h50M405 130h50M405 150h50" /></g>
-              <g className="lp-jib">
-                <g className="lp-drawn lp-d4"><path d="M430 92h150M430 92 L400 78 L430 92" /></g>
-                <g className="lp-drawn lp-d4"><path d="M560 92v14M545 92v10" /></g>
-                <g className="lp-hook"><path className="lp-drawn lp-d5" d="M552 106v40" /><circle className="lp-drawn lp-d5" cx="552" cy="150" r="5" /></g>
-              </g>
-            </g>
-            <g className="lp-drawn lp-d6"><path d="M45 400h233M45 396v8M278 396v8" /></g>
-            <text className="lp-dimlabel" x="90" y="416">18.600 m</text>
-            <g className="lp-pts">
-              <circle className="lp-pt" cx="90" cy="380" r="4" /><circle className="lp-ring" cx="90" cy="380" r="4" />
-              <circle className="lp-pt" cx="330" cy="380" r="4" /><circle className="lp-ring" cx="330" cy="380" r="4" style={{ animationDelay: '-1s' }} />
-              <circle className="lp-pt" cx="480" cy="380" r="4" /><circle className="lp-ring" cx="480" cy="380" r="4" style={{ animationDelay: '-2s' }} />
-            </g>
-          </svg>
         </div>
+        <svg className="lp-scene lp-measure" viewBox="0 0 1160 90" preserveAspectRatio="none" aria-hidden="true">
+          <g className="lp-drawn lp-d6"><path d="M40 60h300M40 56v8M340 56v8" /></g>
+          <text className="lp-dimlabel" x="60" y="82">18.600 m</text>
+          <circle className="lp-pt" cx="90" cy="60" r="4" /><circle className="lp-ring" cx="90" cy="60" r="4" />
+          <circle className="lp-pt" cx="290" cy="60" r="4" /><circle className="lp-ring" cx="290" cy="60" r="4" style={{ animationDelay: '-1s' }} />
+        </svg>
       </section>
 
       <div className="lp-tick" aria-hidden="true"><div>
