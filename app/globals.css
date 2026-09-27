@@ -165,3 +165,15 @@ details[open] .rsum::after{transform:rotate(45deg)}
 .lp-foot nav{display:flex;gap:16px}
 .lp-foot a{color:var(--mu)}
 @media(prefers-reduced-motion:reduce){.lp-ring,.lp-tick div{animation:none}.lp-drawn path{stroke-dashoffset:0}}
+/* ---------- floating tip bubble ---------- */
+.tipwrap{position:fixed;right:16px;bottom:16px;z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.tipfab{width:52px;height:52px;border-radius:50%;border:1px solid var(--rule2);background:var(--pap);box-shadow:0 8px 24px rgba(27,39,51,.18);font-size:22px;cursor:pointer;display:grid;place-items:center;animation:tipbob 3s ease-in-out infinite}
+@keyframes tipbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.tipcard{width:min(300px,calc(100vw - 32px));background:var(--pap);border:1px solid var(--rule2);border-radius:16px;padding:16px 16px 14px;box-shadow:0 18px 48px rgba(27,39,51,.22);animation:tippop .25s cubic-bezier(.3,1.6,.4,1)}
+@keyframes tippop{from{opacity:0;transform:translateY(10px) scale(.97)}}
+.tiphead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.tipcat{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--grn);font-weight:600}
+.tipx{background:none;border:0;color:var(--mu);cursor:pointer;font-size:13px;padding:2px 4px}
+.tiptext{margin:0 0 12px;font-size:14px;line-height:1.55;color:var(--ink)}
+.tipnext{background:var(--grn);color:#fff;border:0;border-radius:999px;padding:7px 16px;font:600 12.5px 'IBM Plex Sans',sans-serif;cursor:pointer}
+@media(prefers-reduced-motion:reduce){.tipfab{animation:none}.tipcard{animation:none}}
