@@ -177,3 +177,20 @@ details[open] .rsum::after{transform:rotate(45deg)}
 .tiptext{margin:0 0 12px;font-size:14px;line-height:1.55;color:var(--ink)}
 .tipnext{background:var(--grn);color:#fff;border:0;border-radius:999px;padding:7px 16px;font:600 12.5px 'IBM Plex Sans',sans-serif;cursor:pointer}
 @media(prefers-reduced-motion:reduce){.tipfab{animation:none}.tipcard{animation:none}}
+/* ---------- learn section ---------- */
+.lprog{height:8px;border-radius:99px;background:var(--rule2);overflow:hidden}
+.lprogbar{height:100%;background:var(--grn);transition:width .4s ease}
+.llist{display:grid;gap:2px;margin-top:10px}
+.lrow{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:14px}
+.lrow:hover{background:var(--grnl)}
+.ltick{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--rule2);flex:none;display:grid;place-items:center;font-size:11px;color:#fff}
+.ltick.done{background:var(--grn);border-color:var(--grn)}
+.lbadge{margin-left:auto;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--grn);border:1px solid var(--grnl);background:var(--grnl);padding:2px 8px;border-radius:99px}
+.practice{border-top:1px solid var(--rule2);margin-top:18px;padding-top:16px}
+.practice h3{font-size:16px;margin-bottom:6px}
+.pgiven{display:flex;gap:16px;flex-wrap:wrap;background:var(--pap2);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:14px}
+.pgrid{flex-direction:column;gap:4px}
+.pform{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pform input{width:140px}
+.pok{color:var(--grn);font-weight:600;margin-top:10px}
+.pbad{color:#a5312f;font-weight:600;margin-top:10px}
